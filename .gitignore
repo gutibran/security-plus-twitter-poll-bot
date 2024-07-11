@@ -1,0 +1,8 @@
+# python files; virtual environment, cache, etc.
+.venv
+
+# tokens, secrets, keys, etc.
+.env
+
+# miscellaneous
+/extractd_text.json
