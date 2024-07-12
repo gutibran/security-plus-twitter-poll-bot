@@ -1,10 +1,25 @@
 import argparse
 from dotenv import load_dotenv
 import json
+import  ollama
 import os
 import random
 import time
 import tweepy
+
+def initialize_flat_database(json_file_path):
+    """Create a new file to keep track of which questions have been posted."""
+    with open(json_file_path, "w") as json_file:
+        json.write(json_file)
+
+
+def read_flat_database(json_file_path):
+    """Read the flat file database that is used to keep track of the questions that have already been posted."""
+    database = None
+    with open(json_file_path, "r") as json_file:
+        database = json.load(json_file)
+    return database
+
 
 def load_questions(json_file_path):
     """Loads the JSON file containing the organized Security+ questions."""
@@ -12,6 +27,7 @@ def load_questions(json_file_path):
     with open(json_file_path, "r") as json_file:
         questions = json.load(json_file)
     return questions
+
 
 def pick_random_questions(question_list_length):
     """Returns an index between zero and the length of the question list."""
@@ -35,7 +51,16 @@ def load_env():
         "client_id": os.getenv("CLIENT_ID"),
         "client_secret": os.getenv("CLIENT_SECRET")
     }
-    
+
+
+def reword_question(question):
+    """A pirate, pursued by relentless foes, hurriedly buries his cherished treasures in the sands as his ship meets landfall under the shadow of impending danger. Uses an LLM (Llama 3) to reword the question."""
+    response = ollama.chat(model="llama3", messages=[{
+        "role": "user",
+        "content": f"Can you reword the following question. {question}. Please use a different name. In the response could you please omit any text that is not the reworded question, please."
+    }])
+    print(response["message"]["content"])
+
 
 def create_poll(question):
     """Sends a poll tweet on X (Twitter). This is a Security+ question. Uses V2 of their API."""
@@ -49,6 +74,9 @@ def create_poll(question):
         wait_on_rate_limit=True
     )
 
+    question_text = question["question_text"]
+    choices = question["answer_choices"]
+
     client.create_tweet(text="What is the best Linux distribution?", poll_duration_minutes=480, poll_options=["Hannah Montana Linux", "Debian", "Arch", "Ubuntu"])
 
 
@@ -58,9 +86,8 @@ def post_answer_reply():
 
 
 def main():
-    create_poll(0)
-    time.sleep(28800) # this is 8 hours in seconds, set up cron job on server
-    post_answer_reply(1)
+    question = "Felicia wants to deploy an encryption solution that will protect files in motion as they are copied between file shares as well as at rest, and also needs it to support granular, per-­user security. What type of solution should she select?"
+    reword_question(question)
 
 
 if __name__ == "__main__":
